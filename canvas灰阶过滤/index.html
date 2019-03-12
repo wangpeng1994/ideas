@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <style>
+    #drawing {
+      border: 1px solid;
+    }
+  </style>
+  <title>Document</title>
+</head>
+
+<body>
+  <canvas id="drawing" width="800" height="1200">不支持canvas</canvas>
+
+  <script>
+    const drawing = document.getElementById('drawing')
+    const context = drawing.getContext('2d')
+    const image = new Image()
+    image.src = './fang.jpg'
+
+    image.onload = function () {
+      context.drawImage(
+        image, 
+        0, 0, 
+        image.width, image.height, 
+        0, 0, 
+        image.width, image.height
+      )
+      // 取得原始canvas图像的部分数据
+      const imageData = context.getImageData(0, 0, image.width, 600)
+      const data = imageData.data
+
+      let i, red, blue, alpha, average
+
+      // 4个4个地遍历data
+      for (let i = 0, length = data.length; i < length; i += 4) {
+
+        red = data[i]
+        green = data[i + 1]
+        blue = data[i + 2]
+        alpha = data[i + 4]
+
+        // 求取 rbg 平均值（彩色变黑白）
+        average = Math.floor((red + green + blue) / 3)
+        // 设置颜色值，透明度不变
+        // rbg 三种颜色设置为一样的值，即得到灰阶图像
+        data[i] = average
+        data[i + 1] = average
+        data[i + 2] = average
+        
+      }
+
+      // 回写图像数据并显示
+      imageData.data = data
+      context.putImageData(imageData, 0, 0)
+    }
+
+
+  </script>
+</body>
+
+</html>

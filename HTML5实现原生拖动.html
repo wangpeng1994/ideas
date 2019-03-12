@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>JS Bin</title>
+  <style>
+    div {
+      height: 100px;
+      width: 100px;
+      color: red;
+      border: 1px solid;
+    }
+
+    table {
+      border: 1px solid;
+    }
+
+    tr {
+      display: block;
+      border: 1px solid;
+    }
+
+    th,
+    td {
+      width: 100px;
+      border-left: 1px solid;
+    }
+  </style>
+</head>
+
+<body>
+  <table id="myTable">
+    <thead>
+      <tr>
+        <th>姓名</th>
+        <th>省份</th>
+        <th>国籍</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="table-row">
+        <td>张三</td>
+        <td>合肥</td>
+        <td>中国</td>
+      </tr>
+      <tr class="table-row">
+        <td>汤姆</td>
+        <td>华盛顿</td>
+        <td>美国</td>
+      </tr>
+      <tr class="table-row">
+        <td>伊娃</td>
+        <td>莫斯科</td>
+        <td>俄罗斯</td>
+      </tr>
+      <tr class="table-row">
+        <td>小明</td>
+        <td>成都</td>
+        <td>中国</td>
+      </tr>
+    </tbody>
+
+  </table>
+
+  <script>
+
+    function makeTableDraggable() {
+
+      // 注意NodeList对象本身就是动态的
+      let rows = document.querySelectorAll('.table-row')
+
+      // 找到当前子节点所在父节点中的索引
+      function findIndex(node) {
+        return Object.keys(rows).findIndex(n => rows[n].isSameNode(node))
+      }
+
+      // 拖动时，sourceNode 会被放置在 dropNode 的后面
+      function exchangeRow(sourceIndex, targetIndex) {
+        //   console.log(rows[sourceIndex], rows[targetIndex])
+        // 插入到目标位置的后面
+        document.querySelector('#myTable tbody').insertBefore(
+          rows[sourceIndex],
+          rows[targetIndex].nextElementSibling
+        )
+      }
+
+      for (row of rows) {
+        // 令所有行元素可以拖动
+        row.draggable = true
+        // 允许放置即要阻止 dragenter 和 dragover 的默认事件
+        // 否则无法在 drop 事件中获取 dataRansfer 拿到之前 setData 传递的数据
+        row.addEventListener('dragenter', function (e) {
+          e.preventDefault()
+        })
+        row.addEventListener('dragover', function (e) {
+          e.preventDefault()
+        })
+
+        row.addEventListener('dragstart', function (e) {
+          e.dataTransfer.setData('text', findIndex(e.target))
+        })
+        row.addEventListener('drop', function (e) {
+          const sourceIndex = e.dataTransfer.getData('text')
+          // console.log(e.dataTransfer, 'drop', sourceIndex)
+          exchangeRow(sourceIndex, findIndex(this))
+        })
+      }
+
+    }
+
+    window.onload = makeTableDraggable
+  </script>
+
+</body>
+
+</html>
