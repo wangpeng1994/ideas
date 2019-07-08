@@ -7,7 +7,7 @@
  * -i 忽略模式
  */
 
-const addressee = 'youremail@qq.com';
+const addressee = 'youremail@qq.com'; // 指定收件人
 
 const nodemailer = require('nodemailer');
 const path = require('path');
@@ -49,13 +49,13 @@ const transporter = (account) => nodemailer.createTransport({
 */
 function verify(account) {
   return new Promise((resolve, reject) => {
-    transporter(account).verify((error, success) => {
-      if (error) {
-        console.log(colorMap.brightRed, "\n\n登录失败！\n\n", error);
+    transporter(account).verify((err, success) => {
+      if (err) {
+        console.log(colorMap.brightRed, "\n\n登录失败 ×\n", err);
         reject();
       } else {
-        console.log(colorMap.brightGreen, "登陆成功！正在发送邮件...");
-        resolve(account);
+        console.log(colorMap.brightGreen, "\n\n登陆成功 √");
+        resolve();
       }
     });
   });
@@ -65,8 +65,6 @@ function verify(account) {
  * 发送邮件
  */
 function sendMail(account) {
-  console.log(111111)
-
   return new Promise((resolve, reject) => {
     transporter(account).sendMail({
       from: `${account.username}@yourcompany.com`,
@@ -79,12 +77,12 @@ function sendMail(account) {
           'path': path.resolve(__dirname, 'build.tar.gz')
         }
       ]
-    }, (error, info) => {
-      if (error) {
-        console.log(colorMap.brightGreen, "邮件发送失败：\n", error);
+    }, (err, info) => {
+      if (err) {
+        console.log(colorMap.brightGreen, "邮件发送失败 ×\n", err);
         reject();
       }
-      console.log(colorMap.brightGreen, "\n邮件发送成功！");
+      console.log(colorMap.brightGreen, "邮件发送成功 √");
       resolve();
     });
   });
@@ -96,21 +94,25 @@ function sendMail(account) {
  */
 function compress() {
   return new Promise((resolve, reject) => {
-    console.log(colorMap.brightYellow, '\n\n正在压缩文件...\n');
+    console.log(colorMap.brightYellow, '\n正在压缩文件...\n');
+    // TODO: 回头添加 npm run build &&
     exec('tar -cvzf build.tar.gz ./build/', (err, stdout, stderr) => {
       if (err) {
-        console.log(colorMap.brightRed, '压缩出错：\n', stderr);
+        console.log(colorMap.brightRed, '压缩出错 ×\n', stderr);
         reject();
       } else {
         console.log(stdout);
-        console.log(colorMap.brightGreen, '压缩成功！\n');
+        console.log(colorMap.brightGreen, '压缩成功 √ \n');
         resolve();
       }
     })
   });
 }
 
-function start(order) {
+/**
+ * 命令行交互
+ */
+async function start(order) {
   const rl = readline.createInterface({  //创建接口
     input: process.stdin,
     output: process.stdout
@@ -123,7 +125,7 @@ function start(order) {
   rl._writeToOutput = function _writeToOutput(stringToWrite) {
     if (rl.stdoutMuted)
       // rl.output.write("\x1B[2K\x1B[200D"+'> 请输入密码：'+((rl.line.length%2==1)?"|":"_"));
-      rl.output.write("\x1B[2K\x1B[200D" + '> 请输入密码：' + (new Array(rl.line.length + 1).toString().replace(/,/g, '*')));
+      rl.output.write('\x1B[2K\x1B[200D' + '> 请输入密码：' + (new Array(rl.line.length + 1).toString().replace(/,/g, '*')));
     else
       rl.output.write(stringToWrite);
   };
@@ -131,21 +133,33 @@ function start(order) {
   rl.on('close', () => {
     bye(false);
   });
-
-  rl.question('> 请输入域账号：', username => {
-    // 不输入直接回车会退出程序
-    if (!username) bye();
-    rl.stdoutMuted = true;
-    rl.question('> 请输入密码：', password => {
-      if (!password) bye();
-      verify({ username, password })
-      // [order === 'ignore' ? 'finally' : 'then'](() => compress(), bye(1))
-        .then(compress(), bye(1))
-        .then(sendMail({ username, password }), bye(1))
-        .then(bye(0), bye(1));
-
-      sendMail({ username, password })
+  // 封装提问器，避免回调地狱
+  const ask = (prompt, cb) => new Promise((resolve, reject) => {
+    rl.question(prompt, answer => {
+      if (!answer) {
+        bye(1);
+        reject();
+      }
+      cb(answer, resolve);
     });
+  });
+  // 等待输入账号
+  const value = await ask('> 请输入域账号：', (answer, resolve) => {
+    rl.stdoutMuted = true; // 不显示密码
+    resolve(answer); // ask 提供的 cb 中进行解决才能继续 ask
+  });
+  // 继续等待输入密码
+  ask('> 请输入密码：', (answer, resolve) => {
+    const account = {
+      username: value,
+      password: answer
+    };
+    const ctrl = order === 'ignore' ? 'finally' : 'then';
+    verify(account)
+    [ctrl](compress, bye(1))
+      // 忽略模式下会继续 compress，但能否 sendMail 取决于 verify 结果
+      .then(() => sendMail(account))
+      .then(bye(0), bye(1));
   });
 };
 
@@ -155,7 +169,7 @@ function start(order) {
 switch (process.argv[2]) {
   case '--help':
     console.log(`
-    输入域账号和密码 --> 打包 --> 压缩 --> 自动邮件发送给李总。参数如下：
+    输入域账号和密码 --> 打包 --> 压缩 --> 自动邮件发送给李总，参数如下：\n
     --help：帮助文档
         -i：忽略模式，如果账号验证失败，虽然不会自动发送邮件，但依然会进行打包压缩。
     `);
