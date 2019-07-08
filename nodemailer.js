@@ -7,7 +7,7 @@
  * -i 忽略模式
  */
 
-const addressee = '947034046@qq.com';
+const addressee = 'youremail@qq.com';
 
 const nodemailer = require('nodemailer');
 const path = require('path');
@@ -30,8 +30,8 @@ const colorMap = {
  * 初始化发送器
  */
 const transporter = (account) => nodemailer.createTransport({
-  // server: 'mail.iflytek.com',
-  host: 'mail.iflytek.com',
+  // server: 'mail.yourcompany.com',
+  host: 'mail.yourcompany.com',
   port: 465, // 25 TLS: 465
   secure: true, // use TLS
   tls: {
@@ -39,7 +39,7 @@ const transporter = (account) => nodemailer.createTransport({
     rejectUnauthorized: false
   },
   auth: {
-    user: `${account.username}@iflytek.com`,
+    user: `${account.username}@yourcompany.com`,
     pass: account.password
   }
 });
@@ -69,7 +69,7 @@ function sendMail(account) {
 
   return new Promise((resolve, reject) => {
     transporter(account).sendMail({
-      from: `${account.username}@iflytek.com`,
+      from: `${account.username}@yourcompany.com`,
       to: addressee,
       subject: "测试使用node发送邮件",
       text: "请注意查收附件！\n本邮件由前端打包后自动发送。",
