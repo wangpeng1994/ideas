@@ -125,7 +125,8 @@ async function start(order) {
   rl._writeToOutput = function _writeToOutput(stringToWrite) {
     if (rl.stdoutMuted)
       // rl.output.write("\x1B[2K\x1B[200D"+'> 请输入密码：'+((rl.line.length%2==1)?"|":"_"));
-      rl.output.write('\x1B[2K\x1B[200D' + '> 请输入密码：' + (new Array(rl.line.length + 1).toString().replace(/,/g, '*')));
+      // rl.output.write('\x1B[2K\x1B[200D' + '> 请输入密码：' + (new Array(rl.line.length + 1).toString().replace(/,/g, '*')));
+      rl.output.write('\x1B[2K\x1B[200D' + '> 请输入密码：' + '*'.repeat(rl.line.length));
     else
       rl.output.write(stringToWrite);
   };
